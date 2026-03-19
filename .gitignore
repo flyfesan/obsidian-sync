@@ -1,2 +1,8 @@
 data/
 etc/
+.env
+traefik
+*.back
+*secrets*
+*.swp
+letsencrypt

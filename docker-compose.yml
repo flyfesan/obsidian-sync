@@ -1,41 +1,4 @@
 services:
-  reverse-proxy:
-    image: traefik:v3.5
-    restart: unless-stopped
-    command:
-      - "--api"
-      - "--api.insecure=true"
-      - "--api.dashboard=true"
-
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-
-      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=email@example.com"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-
-      - "--log=true"
-      - "--log.filepath=/var/log/traefik.log"
-      - "--log.level=DEBUG"
-      - "--accesslog.filepath=/var/log/access_traefik.log"
-
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    volumes:
-      # listens to all the docker socket, so it reads all docker services
-      - ./letsencrypt:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./traefik:/etc/traefik
-      - ./traefik/log:/var/log
-    networks:
-      - obsidian
   couchserver:
     image: couchdb:latest
     restart: unless-stopped
@@ -43,7 +6,7 @@ services:
     #  mode: replicated
     #  replicas: 3
     networks:
-      - obsidian
+      - default
     environment:
       - COUCHDB_USER=${COUCHDB_USER}
       - COUCHDB_PASSWORD=${COUCHDB_PASSWORD}
@@ -53,11 +16,11 @@ services:
       - "traefik.http.routers.couchserver.entrypoints=websecure"
       - "traefik.http.routers.couchserver.tls=true"
       - "traefik.http.routers.couchserver.tls.certresolver=myresolver"
-      - "traefik.http.routers.couchserver.rule=Host(`MY_HOST`)"
+      - "traefik.http.routers.couchserver.rule=Host(`HOST`)"
 
       - "traefik.http.services.couchserver.loadbalancer.server.port=5984"
 
-      - "traefik.docker.network=obsidian"
+      - "traefik.docker.network=obsidian-sync_default"
     env_file:
       - .env
     volumes:
@@ -66,10 +29,8 @@ services:
 
 volumes:
   data: {}
-  etc: {}
-  letsencrypt: {}
 
 networks:
-  obsidian:
-    # external: true
+  default:
     driver: bridge
+    attachable: true
